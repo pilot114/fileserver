@@ -2,13 +2,13 @@
 
 namespace App\Controller;
 
-use App\Service\FileManager;
-use App\Controller\BaseController;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+
+use App\Service\FileManager;
 
 class ApiController extends BaseController
 {
@@ -20,6 +20,7 @@ class ApiController extends BaseController
         $this->container = $container;
         $request = Request::createFromGlobals();
         $token = $request->headers->get('token');
+        $token = 1234;
 
         if (empty($token)) {
             $this->errorResponse('Токен пустой', Response::HTTP_BAD_REQUEST)->send();
@@ -33,6 +34,7 @@ class ApiController extends BaseController
         }
 
         $this->fileManager = $fm;
+        $this->fileManager->setUserInfo($user);
     }
 
     /**
@@ -40,33 +42,20 @@ class ApiController extends BaseController
      */
     public function create(Request $request)
     {
-        $fullName   = $request->request->get('full_name');
+        $path = $request->request->get('path');
+        $file = $request->files->get('file');
         $accessType = $request->request->get('access_type');
-        $file       = $request->files->get('file');
 
-        if (!$this->fileManager->create($fullName, $accessType, $file)) {
+        try {
+            $this->fileManager->create($path, $file, $accessType);
+        } catch (\Exception $e) {
             return $this->errorResponse(
-                sprintf('Не удалось создать файл: %s', $this->fileManager->getError()),
-                $this->fileManager->getErrorStatus()
+                sprintf('Не удалось создать файл: %s', $e->getMessage()),
+                Response::HTTP_BAD_REQUEST
             );
         }
+
         return $this->successResponse('Файл создан');
-    }
-
-    /**
-     * @Route("/api/v1/file/delete")
-     */
-    public function delete(Request $request)
-    {
-        $fullName = $request->request->get('full_name');
-
-        if (!$this->fileManager->delete($fullName)) {
-            return $this->errorResponse(
-                sprintf('Не удалось удалить файл: %s', $this->fileManager->getError()),
-                $this->fileManager->getErrorStatus()
-            );
-        }
-        return $this->successResponse('Файл удалён');
     }
 
     /**
@@ -76,8 +65,36 @@ class ApiController extends BaseController
     {
         $path = $request->request->get('path');
 
-        $files = $this->fileManager->list($path);
+        try {
+            $files = $this->fileManager->list($path);
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                sprintf('Не удалось получить список файлов: %s', $e->getMessage()),
+                Response::HTTP_BAD_REQUEST
+            );
+        }
+
         return $this->successResponse($files);
+    }
+
+    /**
+     * @Route("/api/v1/file/delete")
+     */
+    public function delete(Request $request)
+    {
+        $path = $request->request->get('path');
+        $filename = $request->request->get('filename');
+
+        try {
+            $this->fileManager->delete($path, $filename);
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                sprintf('Не удалось удалить файл: %s', $e->getMessage()),
+                Response::HTTP_BAD_REQUEST
+            );
+        }
+
+        return $this->successResponse('Файл удалён');
     }
 
     /**
@@ -85,25 +102,29 @@ class ApiController extends BaseController
      */
     public function setAccessType(Request $request)
     {
-        $fullName   = $request->request->get('full_name');
+        $path = $request->request->get('path');
+        $filename = $request->request->get('filename');
         $accessType = $request->request->get('access_type');
 
-        if (!$this->fileManager->setAccessType($fullName, $accessType)) {
+        try {
+            $this->fileManager->setAccessType($path, $filename, $accessType);
+        } catch (\Exception $e) {
             return $this->errorResponse(
-                sprintf('Не удалось обновить тип доступа: %s', $this->fileManager->getError()),
-                $this->fileManager->getErrorStatus()
+                sprintf('Не удалось обновить тип доступа: %s', $e->getMessage()),
+                Response::HTTP_BAD_REQUEST
             );
         }
+
         return $this->successResponse('Тип доступа обновлён');
     }
 
 
-    private function successResponse($data) : JsonResponse
+    private function successResponse($data): JsonResponse
     {
         return $this->json(['error' => null, 'result' => $data]);
     }
 
-    private function errorResponse(string $message, int $status) : JsonResponse
+    private function errorResponse(string $message, int $status): JsonResponse
     {
         return $this->json(['error' => $message, 'result' => null])->setStatusCode($status);
     }

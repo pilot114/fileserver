@@ -38,9 +38,4 @@ class BaseController extends Controller
         }
         return null;
     }
-
-    protected function generateSecretForFile(array $user, string $fullName) : string
-    {
-        return substr(md5($fullName . $user['secret']), 0, 6);
-    }
 }

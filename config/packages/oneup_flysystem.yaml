@@ -1,9 +1,12 @@
 # Read the documentation: https://github.com/1up-lab/OneupFlysystemBundle/tree/master/Resources/doc/index.md
 oneup_flysystem:
+    # список доступных адаптеров
     adapters:
         default_adapter:
             local:
-                directory: '%kernel.cache_dir%/flysystem'
+                directory: '%kernel.project_dir%/public/files'
+
+    # используемые адаптеры
     filesystems:
         default_filesystem:
             adapter: default_adapter
