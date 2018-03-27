@@ -3,9 +3,11 @@
 namespace App\Controller;
 
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Routing\Annotation\Route;
 
 use App\Service\FileManager;
@@ -56,6 +58,43 @@ class ApiController extends BaseController
         }
 
         return $this->successResponse('Файл создан');
+    }
+
+    /**
+     * @Route("/api/v1/file/get")
+     */
+    public function getFile(Request $request)
+    {
+        $url = $request->request->get('url');
+        $format = $request->request->get('format');
+
+        try {
+            $file = $this->fileManager->get($url);
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                sprintf('Не удалось получить файл: %s', $e->getMessage()),
+                Response::HTTP_BAD_REQUEST
+            );
+        }
+
+        if ($format == 'raw') {
+            $response = new Response($file['content']);
+            $disposition = $response->headers->makeDisposition(
+                ResponseHeaderBag::DISPOSITION_ATTACHMENT,
+                $file['name']
+            );
+            $response->headers->set('Content-Disposition', $disposition);
+            return $response;
+        }
+
+        if ($format == 'base64') {
+            return $this->successResponse(['file' => base64_encode($file['content'])]);
+        }
+
+        return $this->errorResponse(
+            sprintf('Неподдерживаемый формат: %s', $format),
+            Response::HTTP_BAD_REQUEST
+        );
     }
 
     /**

@@ -4,6 +4,7 @@ namespace App\Service;
 
 
 use League\Flysystem\Exception;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use League\Flysystem\Filesystem;
 
@@ -11,13 +12,17 @@ class FileManager
 {
     const PUBLIC_ACCESS = 'public';
     const PROTECTED_ACCESS = 'protected';
+    const PRIVATE_ACCESS = 'private';
 
     private $fs;
+    private $private_fs;
+
     private $userInfo;
 
-    public function __construct(Filesystem $fs)
+    public function __construct(ContainerInterface $container)
     {
-        $this->fs = $fs;
+        $this->fs = $container->get('public_fs');
+        $this->private_fs = $container->get('private_fs');
     }
 
     public function setUserInfo(array $userInfo)
@@ -38,6 +43,10 @@ class FileManager
             $path = sprintf('%s/%s', $path, $this->generateSecretForFile($path . $file->getClientOriginalName()));
         }
 
+        if ($accessType == self::PRIVATE_ACCESS) {
+            $this->fs = $this->private_fs;
+        }
+
         $realPath = sprintf(
             '%s/%s/%s',
             $this->userInfo['username'],
@@ -52,18 +61,26 @@ class FileManager
 
     public function delete($path, $filename)
     {
+        // TODO: глобально фильтровать $path
         // тримим весь мусор в пути до файла
         $path = trim($path, "./ \t\n\r\0\x0B");
 
+        $simplePath = sprintf('%s/%s/%s', $this->userInfo['username'], $path, $filename);
+
+        // пробуем удалить файл - приватный
+        if ($this->private_fs->has($simplePath)) {
+            $this->private_fs->delete($simplePath);
+            return;
+        }
+
         // пробуем удалить файл - публичный или защищённый
-        $publicPath = sprintf('%s/%s/%s', $this->userInfo['username'], $path, $filename);
-        if ($this->fs->has($publicPath)) {
-            $this->fs->delete($publicPath);
+        if ($this->fs->has($simplePath)) {
+            $this->fs->delete($simplePath);
         } else {
             $path = sprintf('%s/%s', $path, $this->generateSecretForFile($path . $filename));
-            $privatePath = sprintf('%s/%s/%s', $this->userInfo['username'], $path, $filename);
+            $protectedPath = sprintf('%s/%s/%s', $this->userInfo['username'], $path, $filename);
 
-            $this->fs->delete($privatePath);
+            $this->fs->delete($protectedPath);
             // временную директорию тоже удаляем
             $this->fs->deleteDir($this->userInfo['username'] . '/' . $path);
         }
@@ -71,7 +88,6 @@ class FileManager
 
     public function list($path) : array
     {
-        $path = 'mario/test3';
         $pathWithUser = $this->userInfo['username'] . '/' . $path;
         $files = $this->fs->listContents($pathWithUser);
 
@@ -83,7 +99,10 @@ class FileManager
                 $list[] = [
                     'path' => $path . '/' . $realFile['basename'],
                     'url' => 'http://fileserver.local/files/' . $pathWithUser . '/' . $file['basename'] . '/' . $realFile['basename'],
-                    'access_type' => self::PROTECTED_ACCESS
+                    'access_type' => self::PROTECTED_ACCESS,
+                    'timestamp' => $realFile['timestamp'],
+                    'size' => $realFile['size'],
+                    'extension' => $realFile['extension'],
                 ];
                 continue;
             }
@@ -94,16 +113,53 @@ class FileManager
             if ($file['type'] == 'file') {
                 $publicFile['url'] = 'http://fileserver.local/files/' . $pathWithUser . '/' . $file['basename'];
                 $publicFile['access_type'] = self::PUBLIC_ACCESS;
+                $publicFile['timestamp'] = $file['timestamp'];
+                $publicFile['size'] = $file['size'];
+                $publicFile['extension'] = $file['extension'];
+
             }
             $list[] = $publicFile;
         }
+
+        // приватные файлы также добавляем
+        $files = $this->private_fs->listContents($pathWithUser);
+        foreach ($files as $file) {
+            $privateFile = [
+                'path' => $path ? $path . '/' . $file['basename'] : $file['basename'],
+            ];
+            if ($file['type'] == 'file') {
+                $privateFile['url'] = 'http://fileserver.local/files/' . $pathWithUser . '/' . $file['basename'];
+                $privateFile['access_type'] = self::PRIVATE_ACCESS;
+                $privateFile['timestamp'] = $file['timestamp'];
+                $privateFile['size'] = $file['size'];
+                $privateFile['extension'] = $file['extension'];
+
+            }
+            $list[] = $privateFile;
+        }
+
         return $list;
+    }
+
+    /**
+     * Желательно получать файлы через php только в случае, если они приватные
+     */
+    public function get($url)
+    {
+        // TODO
+//        $path = $privateUrl;
+        $path = 'portal/mario/test3/ptd_67e2e4/DevIL.dll';
+        return [
+            'content' => $this->fs->read($path),
+            'name' => 'DevIL.dll'
+        ];
     }
 
     public function setAccessType($path, $filename, $accessType)
     {
         $path = 'mario/test3';
-        $filename = "/DevIL.dll";
+        $filename = 'SDL.dll';
+        $accessType = 'protected';
 
         $pathWithUser = $this->userInfo['username'] . '/' . $path;
         $files = $this->fs->listContents($pathWithUser);
@@ -111,11 +167,26 @@ class FileManager
         foreach ($files as $file) {
             // защищенные файлы
             if ($this->isProtectedDir($file)) {
-                // ...
+                $realFile = $this->fs->listContents($pathWithUser . '/' . $file['basename'])[0];
+                if ($realFile['basename'] === $filename) {
+                    // меняем на публичный
+                    if ($accessType == self::PUBLIC_ACCESS) {
+                        $this->fs->rename($realFile['path'], $pathWithUser . '/' . $realFile['basename']);
+                        // временную директорию удаляем
+                        $this->fs->deleteDir($pathWithUser . '/' . $file['basename']);
+                    }
+                    break;
+                }
             }
+
             // публичные файлы
-            if ($file['type'] == 'file') {
-                // ..
+            if ($file['type'] == 'file' && $file['basename'] === $filename) {
+                // меняем на защищенный
+                if ($accessType == self::PROTECTED_ACCESS) {
+                    $dir = $this->generateSecretForFile($pathWithUser . $file['basename']);
+                    $this->fs->rename($file['path'], $pathWithUser . '/' . $dir . '/' . $file['basename']);
+                }
+                break;
             }
         }
     }

@@ -2,12 +2,18 @@
 oneup_flysystem:
     # список доступных адаптеров
     adapters:
-        default_adapter:
+        public:
             local:
                 directory: '%kernel.project_dir%/public/files'
+        private:
+            local:
+                directory: '%kernel.project_dir%/private/files'
 
     # используемые адаптеры
     filesystems:
-        default_filesystem:
-            adapter: default_adapter
-            alias: League\Flysystem\Filesystem
+        public_fs:
+            adapter: public
+            alias: public_fs
+        private_fs:
+            adapter: private
+            alias: private_fs
