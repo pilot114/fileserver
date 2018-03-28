@@ -3,11 +3,19 @@
 namespace App\Service;
 
 
-use League\Flysystem\Exception;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
-use League\Flysystem\Filesystem;
+use Symfony\Component\HttpFoundation\Request;
+use League\Flysystem\MountManager;
 
+/**
+ * FileManager инкапсулирует работу с файлами в различных файловых системах,
+ * а также определяет особенности их хранения в зависимости от типа доступа.
+ *
+ * public - файлы доступны по прямой ссылке, ссылка соотвествует пути и имени, задданными пользователем
+ * protected - тоже самое, но в ссылке присутствует уникальный хэш
+ * private - для файлов, которые не должны быть доступны напрямую
+ */
 class FileManager
 {
     const PUBLIC_ACCESS = 'public';
@@ -16,13 +24,23 @@ class FileManager
 
     private $fs;
     private $private_fs;
+    private $mm;
 
     private $userInfo;
+    private $host;
 
     public function __construct(ContainerInterface $container)
     {
         $this->fs = $container->get('public_fs');
         $this->private_fs = $container->get('private_fs');
+
+        // для перемещениями между двумя файловыми системами применяется MountManager
+        $this->mm = new MountManager([
+            'public_protected' => $this->fs,
+            'private' => $this->private_fs,
+        ]);
+
+        $this->host = Request::createFromGlobals()->getSchemeAndHttpHost();
     }
 
     public function setUserInfo(array $userInfo)
@@ -98,7 +116,7 @@ class FileManager
                 $realFile = $this->fs->listContents($pathWithUser . '/' . $file['basename'])[0];
                 $list[] = [
                     'path' => $path . '/' . $realFile['basename'],
-                    'url' => 'http://fileserver.local/files/' . $pathWithUser . '/' . $file['basename'] . '/' . $realFile['basename'],
+                    'url' => $this->host . '/files/' . $pathWithUser . '/' . $file['basename'] . '/' . $realFile['basename'],
                     'access_type' => self::PROTECTED_ACCESS,
                     'timestamp' => $realFile['timestamp'],
                     'size' => $realFile['size'],
@@ -111,7 +129,7 @@ class FileManager
                 'path' => $path ? $path . '/' . $file['basename'] : $file['basename'],
             ];
             if ($file['type'] == 'file') {
-                $publicFile['url'] = 'http://fileserver.local/files/' . $pathWithUser . '/' . $file['basename'];
+                $publicFile['url'] = $this->host . '/files/' . $pathWithUser . '/' . $file['basename'];
                 $publicFile['access_type'] = self::PUBLIC_ACCESS;
                 $publicFile['timestamp'] = $file['timestamp'];
                 $publicFile['size'] = $file['size'];
@@ -128,7 +146,7 @@ class FileManager
                 'path' => $path ? $path . '/' . $file['basename'] : $file['basename'],
             ];
             if ($file['type'] == 'file') {
-                $privateFile['url'] = 'http://fileserver.local/files/' . $pathWithUser . '/' . $file['basename'];
+                $privateFile['url'] = $this->host . '/files/' . $pathWithUser . '/' . $file['basename'];
                 $privateFile['access_type'] = self::PRIVATE_ACCESS;
                 $privateFile['timestamp'] = $file['timestamp'];
                 $privateFile['size'] = $file['size'];
@@ -157,10 +175,6 @@ class FileManager
 
     public function setAccessType($path, $filename, $accessType)
     {
-        $path = 'mario/test3';
-        $filename = 'SDL.dll';
-        $accessType = 'protected';
-
         $pathWithUser = $this->userInfo['username'] . '/' . $path;
         $files = $this->fs->listContents($pathWithUser);
 
@@ -170,8 +184,15 @@ class FileManager
                 $realFile = $this->fs->listContents($pathWithUser . '/' . $file['basename'])[0];
                 if ($realFile['basename'] === $filename) {
                     // меняем на публичный
+                    $newPath = $pathWithUser . '/' . $realFile['basename'];
                     if ($accessType == self::PUBLIC_ACCESS) {
-                        $this->fs->rename($realFile['path'], $pathWithUser . '/' . $realFile['basename']);
+                        $this->fs->rename($realFile['path'], $newPath);
+                        // временную директорию удаляем
+                        $this->fs->deleteDir($pathWithUser . '/' . $file['basename']);
+                    }
+                    if ($accessType == self::PRIVATE_ACCESS) {
+                        $this->mm->move('public_protected://' . $realFile['path'], 'private://' . $newPath);
+
                         // временную директорию удаляем
                         $this->fs->deleteDir($pathWithUser . '/' . $file['basename']);
                     }
@@ -185,6 +206,13 @@ class FileManager
                 if ($accessType == self::PROTECTED_ACCESS) {
                     $dir = $this->generateSecretForFile($pathWithUser . $file['basename']);
                     $this->fs->rename($file['path'], $pathWithUser . '/' . $dir . '/' . $file['basename']);
+                }
+                // меняем на приватный
+                if ($accessType == self::PRIVATE_ACCESS) {
+                    $this->mm->move(
+                        'public_protected://' . $realFile['path'],
+                        'private://' . $pathWithUser . '/' . $file['basename']
+                    );
                 }
                 break;
             }
