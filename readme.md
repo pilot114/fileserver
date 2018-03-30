@@ -1,6 +1,13 @@
+Depends
+=======
+
+    composer install
+    yarn install
+
 Front
 =====
 
-    yarn run encore dev
-    yarn run encore dev --watch
-    yarn run encore production
+    yarn run dev
+    yarn run watch
+    yarn run dev-server
+    yarn run build
