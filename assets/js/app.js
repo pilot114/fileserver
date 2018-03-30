@@ -1,5 +1,5 @@
 import Vue from 'vue';
-import $ from 'jquery';
+import 'jquery';
 import 'bootstrap';
 
 Vue.config.devtools = true;
@@ -15,6 +15,34 @@ let api = {
 new Vue({
     el: '#app',
     data: {
+        tree: {
+            name: 'My Tree',
+            children: [
+                { name: 'hello' },
+                { name: 'wat' },
+                {
+                    name: 'child folder',
+                    children: [
+                        {
+                            name: 'child folder',
+                            children: [
+                                { name: 'hello' },
+                                { name: 'wat' }
+                            ]
+                        },
+                        { name: 'hello' },
+                        { name: 'wat' },
+                        {
+                            name: 'child folder',
+                            children: [
+                                { name: 'hello' },
+                                { name: 'wat' }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
     }
 });
 

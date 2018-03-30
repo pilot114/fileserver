@@ -1,2 +1,15 @@
-#app {
+@import "~bootstrap/dist/css/bootstrap.css";
+
+body {
+  font-family: Calibri;
+  color: #444;
+}
+
+.header {
+  background-color: black;
+  color: white;
+}
+
+.block {
+  padding: 1em;
 }
