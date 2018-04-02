@@ -12,7 +12,14 @@
         </div>
         <div class="row">
             <div class="col-4 block">
-                tree
+                <div v-if="currentNode">
+                    <b @click="enterNode(currentNode)"> {{ currentNode.name }} </b>
+                    <ul>
+                        <li v-for="(child, index) in currentNode.children" @click="enterNode(child)">
+                            {{ child.name }}
+                        </li>
+                    </ul>
+                </div>
             </div>
             <div class="col-8 block">
                 preview

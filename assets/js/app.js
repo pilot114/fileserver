@@ -1,8 +1,16 @@
 import Vue from 'vue';
-import 'jquery';
+import axios from 'axios';
 import 'bootstrap';
 
 Vue.config.devtools = true;
+
+// пока хардкод
+let user = {
+    name: 'portal',
+    password: '1234',
+    secret: '1234',
+    token: '1234',
+};
 
 let api = {
     'create': '/api/v1/file/create',
@@ -12,37 +20,64 @@ let api = {
     'setAccessType': '/api/v1/file/setAccessType'
 };
 
+let server = axios.create({
+    baseURL: 'http://fileserver.local/',
+    headers: {
+        token: user.token,
+    }
+});
+// добавляем перехватчики для обработки стандартных ошибок и логгирования
+server.interceptors.response.use(function (response) {
+    if(response.data.error) {
+        alert(response.data.error);
+    } else {
+        console.log(response.data.result);
+        return response.data.result;
+    }
+}, function (error) {
+    console.log(error);
+});
+
+
 new Vue({
     el: '#app',
     data: {
-        tree: {
-            name: 'My Tree',
-            children: [
-                { name: 'hello' },
-                { name: 'wat' },
-                {
-                    name: 'child folder',
-                    children: [
-                        {
-                            name: 'child folder',
-                            children: [
-                                { name: 'hello' },
-                                { name: 'wat' }
-                            ]
-                        },
-                        { name: 'hello' },
-                        { name: 'wat' },
-                        {
-                            name: 'child folder',
-                            children: [
-                                { name: 'hello' },
-                                { name: 'wat' }
-                            ]
-                        }
-                    ]
-                }
-            ]
-        }
+        currentNode: null,
+        parentNode: null
+    },
+    created: function () {
+        server
+            .post(api.list)
+            .then(result => {
+                this.currentNode = {
+                    name: '/',
+                    children: result.map(item => {
+                        item.name = item.path;
+                        return item;
+                    })
+                };
+            })
+    },
+    methods: {
+        enterNode: function(node){
+            console.log('path:' + node.path);
+
+            // application/x-www-form-urlencoded - как в формах
+            let params = new URLSearchParams();
+            params.append('path', node.path);
+
+            server
+                .post(api.list, params)
+                .then(result => {
+                    this.currentNode = {
+                        name: node.path,
+                        children: result.map(item => {
+                            item.name = item.path;
+                            return item;
+                        })
+                    };
+                })
+        },
     }
 });
 

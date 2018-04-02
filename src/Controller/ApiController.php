@@ -22,7 +22,6 @@ class ApiController extends BaseController
         $this->container = $container;
         $request = Request::createFromGlobals();
         $token = $request->headers->get('token');
-        $token = 1234;
 
         if (empty($token)) {
             $this->errorResponse('Токен пустой', Response::HTTP_BAD_REQUEST)->send();
