@@ -29,13 +29,14 @@ let server = axios.create({
 // добавляем перехватчики для обработки стандартных ошибок и логгирования
 server.interceptors.response.use(function (response) {
     if(response.data.error) {
-        alert(response.data.error);
+        console.log("app error: " + response.data.error);
     } else {
+        console.log("api call:");
         console.log(response.data.result);
         return response.data.result;
     }
 }, function (error) {
-    console.log(error);
+    console.log("server error: " + error);
 });
 
 
@@ -43,7 +44,6 @@ new Vue({
     el: '#app',
     data: {
         currentNode: null,
-        parentNode: null
     },
     created: function () {
         server
@@ -60,17 +60,22 @@ new Vue({
     },
     methods: {
         enterNode: function(node){
-            console.log('path:' + node.path);
+
+            // это файл
+            if (node.children.length === 0) {
+                this.preview(node);
+                return;
+            }
 
             // application/x-www-form-urlencoded - как в формах
             let params = new URLSearchParams();
-            params.append('path', node.path);
+            params.append('path', node.name);
 
             server
                 .post(api.list, params)
                 .then(result => {
                     this.currentNode = {
-                        name: node.path,
+                        name: node.name,
                         children: result.map(item => {
                             item.name = item.path;
                             return item;
@@ -78,6 +83,10 @@ new Vue({
                     };
                 })
         },
+        preview: function(file){
+            console.log(file);
+        }
+
     }
 });
 
