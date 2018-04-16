@@ -8,6 +8,7 @@
 
 /public/files/
 /private/files/
+.idea
 
 ###> symfony/webpack-encore-pack ###
 /node_modules/
