@@ -34,7 +34,7 @@ class FileManager
         $this->fs = $container->get('public_fs');
         $this->private_fs = $container->get('private_fs');
 
-        // для перемещениями между двумя файловыми системами применяется MountManager
+        // для перемещениями файлов между двумя файловыми системами применяется MountManager
         $this->mm = new MountManager([
             'public_protected' => $this->fs,
             'private' => $this->private_fs,
@@ -80,7 +80,6 @@ class FileManager
     public function delete($path, $filename)
     {
         // TODO: глобально фильтровать $path
-        // тримим весь мусор в пути до файла
         $path = trim($path, "./ \t\n\r\0\x0B");
 
         $simplePath = sprintf('%s/%s/%s', $this->userInfo['name'], $path, $filename);
@@ -106,7 +105,14 @@ class FileManager
 
     public function list($path) : array
     {
-        $pathWithUser = $this->userInfo['name'] . '/' . $path;
+        // TODO: глобально фильтровать $path
+        $path = trim($path, "./ \t\n\r\0\x0B");
+
+        $pathWithUser = $this->userInfo['name'];
+        if ($path) {
+            $pathWithUser .=  '/' . $path;
+        }
+
         $files = $this->fs->listContents($pathWithUser);
 
         $list = [];
@@ -115,8 +121,8 @@ class FileManager
             if ($this->isProtectedDir($file)) {
                 $realFile = $this->fs->listContents($pathWithUser . '/' . $file['basename'])[0];
                 $list[] = [
-                    'path' => $path . '/' . $realFile['basename'],
-                    'url' => $this->host . '/files/' . $pathWithUser . '/' . $file['basename'] . '/' . $realFile['basename'],
+                    'name' => $realFile['basename'],
+                    'url' => $this->host . '/files/' . $pathWithUser .  '/' . $file['basename'] . '/' . $realFile['basename'],
                     'access_type' => self::PROTECTED_ACCESS,
                     'timestamp' => $realFile['timestamp'],
                     'size' => $realFile['size'],
@@ -124,36 +130,43 @@ class FileManager
                 ];
                 continue;
             }
-            // публичные файлы и папки
-            $publicFile = [
-                'path' => $path ? $path . '/' . $file['basename'] : $file['basename'],
-            ];
-            if ($file['type'] == 'file') {
+            // публичные файлы
+            if ($file['type'] === 'file') {
+                $publicFile['name'] = $file['basename'];
                 $publicFile['url'] = $this->host . '/files/' . $pathWithUser . '/' . $file['basename'];
                 $publicFile['access_type'] = self::PUBLIC_ACCESS;
                 $publicFile['timestamp'] = $file['timestamp'];
                 $publicFile['size'] = $file['size'];
                 $publicFile['extension'] = $file['extension'];
-
+                $list[] = $publicFile;
             }
-            $list[] = $publicFile;
+            // для пользователя одинаковые директории в разных ФС - это одна директория, поэтому добавляем толлько 1 раз
+            if ($file['type'] === 'dir' && !in_array($file['basename'], array_column($list, 'name'))) {
+                $list[] = [
+                    'name' => $file['basename']
+                ];
+            }
         }
 
         // приватные файлы также добавляем
         $files = $this->private_fs->listContents($pathWithUser);
         foreach ($files as $file) {
-            $privateFile = [
-                'path' => $path ? $path . '/' . $file['basename'] : $file['basename'],
-            ];
             if ($file['type'] == 'file') {
+                $privateFile['name'] = $file['basename'];
+                // TODO
                 $privateFile['url'] = $this->host . '/files/' . $pathWithUser . '/' . $file['basename'];
                 $privateFile['access_type'] = self::PRIVATE_ACCESS;
                 $privateFile['timestamp'] = $file['timestamp'];
                 $privateFile['size'] = $file['size'];
                 $privateFile['extension'] = $file['extension'];
-
+                $list[] = $privateFile;
             }
-            $list[] = $privateFile;
+            // для пользователя одинаковые директории в разных ФС - это одна директория, поэтому добавляем толлько 1 раз
+            if ($file['type'] === 'dir' && !in_array($file['basename'], array_column($list, 'name'))) {
+                $list[] = [
+                    'name' => $file['basename']
+                ];
+            }
         }
 
         return $list;
@@ -175,6 +188,9 @@ class FileManager
 
     public function setAccessType($path, $filename, $accessType)
     {
+        // TODO: глобально фильтровать $path
+        $path = trim($path, "./ \t\n\r\0\x0B");
+
         $pathWithUser = $this->userInfo['name'] . '/' . $path;
         $files = $this->fs->listContents($pathWithUser);
 

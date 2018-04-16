@@ -4,25 +4,48 @@
     <meta charset="UTF-8">
     <title>Static</title>
     <link rel="stylesheet" href="/build/css/app.css">
+    <style type="text/css">
+        [v-cloak] {
+            display: none;
+        }
+    </style>
 </head>
 <body>
-    <div class="container" id="app">
+    <div class="container" id="app" v-cloak>
         <div class="row header block">
             <h2>Static UI</h2>
         </div>
         <div class="row">
-            <div class="col-4 block">
+            <div class="col-5 block">
                 <div v-if="currentNode">
-                    <b @click="enterNode(currentNode)"> {{ currentNode.name }} </b>
+                    <b @click="toParentNode()"> {{ currentNode.path }} </b>
                     <ul>
-                        <li v-for="(child, index) in currentNode.children" @click="enterNode(child)">
+                        <li v-for="(child, index) in currentNode.children" @click="toChildNode(child)">
                             {{ child.name }}
                         </li>
                     </ul>
                 </div>
             </div>
-            <div class="col-8 block">
-                preview
+            <div class="col-7 block">
+                <form>
+                    <select v-model="upload.type" title="Тип доступа" class="form-control mb-2">
+                        <option disabled>Тип доступа</option>
+                        <option value="public">public</option>
+                        <option value="protected">protected</option>
+                        <option value="private">private</option>
+                    </select>
+                    <input type="text" v-model="upload.path" placeholder="path" value="/" class="form-control mb-2">
+                    <input type="file" @change="prepareFile($event.target.files)" class="form-control mb-2">
+                    <input type="button" @click="sendFile()" value="Загрузить" class="form-control mb-2">
+                </form>
+                <div v-if="previewFile" style="margin-top: 1em; padding: 1em; border:1px solid; border-color:gray; border-radius: .2em;">
+                    <p>Имя: {{ previewFile.name }}</p>
+                    <p>Тип доступа: {{ previewFile.access_type }}</p>
+                    <p>Время создания: {{ previewFile.timestamp | tsToUTC }}</p>
+                    <p>Размер: {{ previewFile.size | sizeForHumans }}</p>
+                    <a :href="previewFile.url" target="_blank">{{ previewFile.url }}</a>
+                    <button>Удалить</button>
+                </div>
             </div>
         </div>
     </div>
