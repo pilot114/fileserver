@@ -67,7 +67,7 @@ class FileManager
 
         $realPath = sprintf(
             '%s/%s/%s',
-            $this->userInfo['username'],
+            $this->userInfo['name'],
             $path,
             $file->getClientOriginalName()
         );
@@ -83,7 +83,7 @@ class FileManager
         // тримим весь мусор в пути до файла
         $path = trim($path, "./ \t\n\r\0\x0B");
 
-        $simplePath = sprintf('%s/%s/%s', $this->userInfo['username'], $path, $filename);
+        $simplePath = sprintf('%s/%s/%s', $this->userInfo['name'], $path, $filename);
 
         // пробуем удалить файл - приватный
         if ($this->private_fs->has($simplePath)) {
@@ -96,17 +96,17 @@ class FileManager
             $this->fs->delete($simplePath);
         } else {
             $path = sprintf('%s/%s', $path, $this->generateSecretForFile($path . $filename));
-            $protectedPath = sprintf('%s/%s/%s', $this->userInfo['username'], $path, $filename);
+            $protectedPath = sprintf('%s/%s/%s', $this->userInfo['name'], $path, $filename);
 
             $this->fs->delete($protectedPath);
             // временную директорию тоже удаляем
-            $this->fs->deleteDir($this->userInfo['username'] . '/' . $path);
+            $this->fs->deleteDir($this->userInfo['name'] . '/' . $path);
         }
     }
 
     public function list($path) : array
     {
-        $pathWithUser = $this->userInfo['username'] . '/' . $path;
+        $pathWithUser = $this->userInfo['name'] . '/' . $path;
         $files = $this->fs->listContents($pathWithUser);
 
         $list = [];
@@ -175,7 +175,7 @@ class FileManager
 
     public function setAccessType($path, $filename, $accessType)
     {
-        $pathWithUser = $this->userInfo['username'] . '/' . $path;
+        $pathWithUser = $this->userInfo['name'] . '/' . $path;
         $files = $this->fs->listContents($pathWithUser);
 
         foreach ($files as $file) {

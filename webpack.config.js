@@ -7,6 +7,7 @@ Encore
     .enableSourceMaps(!Encore.isProduction())
     .enableSassLoader()
     .enableVueLoader()
+    .autoProvidejQuery()
 
     .addEntry('js/app', './assets/js/app.js')
     .addStyleEntry('css/app', './assets/css/app.scss')

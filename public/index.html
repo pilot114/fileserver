@@ -6,8 +6,25 @@
     <link rel="stylesheet" href="/build/css/app.css">
 </head>
 <body>
-    <div id="app">
-        test
+    <div class="container" id="app">
+        <div class="row header block">
+            <h2>Static UI</h2>
+        </div>
+        <div class="row">
+            <div class="col-4 block">
+                <div v-if="currentNode">
+                    <b @click="enterNode(currentNode)"> {{ currentNode.name }} </b>
+                    <ul>
+                        <li v-for="(child, index) in currentNode.children" @click="enterNode(child)">
+                            {{ child.name }}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-8 block">
+                preview
+            </div>
+        </div>
     </div>
     <script src="/build/js/app.js"></script>
 </body>
