@@ -13,9 +13,9 @@ class BaseController extends Controller
     protected $inMemoryUsers = [
         [
             'name' => 'portal',
-            'password' => '1234',
-            'secret'   => '1234',
-            'token'    => '1234',
+            'password' => '123456',
+            'secret'   => '5ebe2294ecd0e0f08eab7690d2a6ee69',
+            'token'    => '94a08da1fecbb6e8b46990538c7b50b2',
         ],
     ];
 

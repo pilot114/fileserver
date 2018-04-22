@@ -41,49 +41,53 @@ backend.interceptors.response.use(function (response) {
 });
 
 
-new Vue({
+let app = new Vue({
     el: '#app',
     data: {
-        currentNode: {
+        // текущая директория
+        currentDir: {
             path: "/",
             children: []
         },
+        // загружаемый файл
         upload: {
             type: "public",
             path: "/",
             file: null,
+            filename: null
         },
+        // информация по выбранному файлу (name, size и т.д.)
         previewFile: null
     },
     // загрузка корневой директории на старте
     created: function () {
-        this.syncCurrent()
+        this.syncCurrentDir()
     },
     methods: {
-        syncCurrent: function() {
+        syncCurrentDir: function() {
             this.previewFile = null;
-            this.upload.path = this.currentNode.path;
+            this.upload.path = this.currentDir.path;
 
             let params = new FormData();
-            params.append('path', this.currentNode.path);
+            params.append('path', this.currentDir.path);
             backend
                 .post(api.list, params)
                 .then(result => {
-                    this.currentNode.children = result;
+                    this.currentDir.children = result;
                 });
         },
         toParentNode: function() {
             // убираем последнюю часть из пути
-            let parts = this.currentNode.path.split('/');
+            let parts = this.currentDir.path.split('/');
             parts.length-=1;
 
             let newPath = parts.join('/');
             if (newPath) {
-                this.currentNode.path = parts.join('/');
+                this.currentDir.path = parts.join('/');
             } else {
-                this.currentNode.path = '/';
+                this.currentDir.path = '/';
             }
-            this.syncCurrent();
+            this.syncCurrentDir();
         },
         toChildNode: function(node){
             // это файл
@@ -92,27 +96,45 @@ new Vue({
                 return;
             }
 
-            if (this.currentNode.path === '/') {
-                this.currentNode.path += node.name;
+            if (this.currentDir.path === '/') {
+                this.currentDir.path += node.name;
             } else {
-                this.currentNode.path += '/' + node.name;
+                this.currentDir.path += '/' + node.name;
             }
-            this.syncCurrent();
+            this.syncCurrentDir();
         },
+
         prepareFile: function(fileList) {
             this.upload.file = fileList[0];
+            this.upload.filename = fileList[0].name;
         },
         sendFile: function () {
             let params = new FormData();
             params.append('path', this.upload.path);
             params.append('access_type', this.upload.type);
             params.append('file', this.upload.file);
-            console.log(params);
 
             backend
                 .post(api.create, params)
                 .then(result => {
-                    // файл создан!
+                    // в результате нужно получить мета инфу
+                    // файл создан, обновляем UI
+                    app.currentDir.children.push(result);
+                })
+        },
+        deleteFile: function() {
+            let params = new FormData();
+            params.append('path', this.currentDir.path);
+            params.append('filename', this.previewFile.name);
+
+            backend
+                .post(api.delete, params)
+                .then(result => {
+                    // файл удален, обновляем UI
+                    app.currentDir.children = app.currentDir.children.filter(child => {
+                        return child.name != app.previewFile.name;
+                    });
+                    app.previewFile = null;
                 })
         },
         preview: function(file){
