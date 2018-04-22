@@ -13,11 +13,11 @@
         <div class="row">
             <div class="col-5 block">
                 <div v-if="currentDir">
-                    <div id="currentPath">
-                        <b @click="toParentNode()"> {{ currentNode.path }} </b>
+                    <div id="currentPath" @click="toParentNode()">
+                        <b> {{ currentDir.path }} </b>
                     </div>
-                    <ul>
-                        <li v-for="(child, index) in currentDir.children" @click="toChildNode(child)">
+                    <ul class="list-group list-group-flush">
+                        <li v-for="(child, index) in currentDir.children" @click="toChildNode(child)" class="list-group-item">
                             {{ child.name }}
                         </li>
                     </ul>
@@ -37,10 +37,25 @@
                     <input type="button" @click="sendFile()" value="Загрузить" class="form-control mb-2">
                 </form>
 
-                <h3>Информация о файле:</h3>
                 <div v-if="previewFile" style="margin-top: 1em; padding: 1em; border:1px solid; border-color:gray; border-radius: .2em;">
+                    <h3>Информация о файле:</h3>
                     <p>Имя: {{ previewFile.name }}</p>
+
+                    <!--https://codepen.io/CSWApps/post/building-a-vue-js-bootstrap-radio-button-group-->
                     <p>Тип доступа: {{ previewFile.access_type }}</p>
+                    <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                        <label class="btn btn-secondary active">
+                            <input type="radio" name="options" id="option1" autocomplete="off" checked> public
+                        </label>
+                        <label class="btn btn-secondary">
+                            <input type="radio" name="options" id="option2" autocomplete="off"> protected
+                        </label>
+                        <label class="btn btn-secondary">
+                            <input type="radio" name="options" id="option3" autocomplete="off"> private
+                        </label>
+                    </div>
+                    <!--v-bind:class="{ active: isActive }"-->
+
                     <p>Время создания: {{ previewFile.timestamp | tsToUTC }}</p>
                     <p>Размер: {{ previewFile.size | sizeForHumans }}</p>
                     <a :href="previewFile.url" target="_blank">{{ previewFile.url }}</a>

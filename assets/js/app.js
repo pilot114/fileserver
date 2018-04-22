@@ -7,9 +7,7 @@ Vue.config.devtools = true;
 // пока хардкод
 let user = {
     name: 'portal',
-    password: '1234',
-    secret: '1234',
-    token: '1234',
+    token: '94a08da1fecbb6e8b46990538c7b50b2',
 };
 
 let api = {
