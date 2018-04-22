@@ -1,5 +1,9 @@
 @import "~bootstrap/dist/css/bootstrap.css";
 
+[v-cloak] {
+  display: none;
+}
+
 body {
   font-family: Calibri;
   color: #444;
@@ -12,4 +16,12 @@ body {
 
 .block {
   padding: 1em;
+}
+
+#currentPath {
+  color: white;
+  background-color: black;
+  padding: .3em;
+  margin-bottom: 1em;
+  border-radius: .2em;
 }

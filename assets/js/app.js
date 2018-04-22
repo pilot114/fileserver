@@ -22,7 +22,7 @@ let api = {
 
 // backend
 let backend = axios.create({
-    baseURL: 'http://local.static.com/',
+    baseURL: '/',
     headers: {
         token: user.token,
     }
@@ -61,6 +61,7 @@ new Vue({
     },
     methods: {
         syncCurrent: function() {
+            this.previewFile = null;
             this.upload.path = this.currentNode.path;
 
             let params = new FormData();
