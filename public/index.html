@@ -17,10 +17,10 @@
         </div>
         <div class="row">
             <div class="col-5 block">
-                <div v-if="currentNode">
-                    <b @click="toParentNode()"> {{ currentNode.path }} </b>
+                <div v-if="currentDir">
+                    <b @click="toParentNode()"> {{ currentDir.path }} </b>
                     <ul>
-                        <li v-for="(child, index) in currentNode.children" @click="toChildNode(child)">
+                        <li v-for="(child, index) in currentDir.children" @click="toChildNode(child)">
                             {{ child.name }}
                         </li>
                     </ul>
@@ -44,7 +44,9 @@
                     <p>Время создания: {{ previewFile.timestamp | tsToUTC }}</p>
                     <p>Размер: {{ previewFile.size | sizeForHumans }}</p>
                     <a :href="previewFile.url" target="_blank">{{ previewFile.url }}</a>
-                    <button>Удалить</button>
+                    <div>
+                        <button @click="deleteFile()">Удалить</button>
+                    </div>
                 </div>
             </div>
         </div>
