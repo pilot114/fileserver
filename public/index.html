@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Static</title>
+    <link rel="stylesheet" href="/build/css/app.css">
+</head>
+<body>
+    <div class="container" id="app" v-cloak>
+        <div class="row header block">
+            <h2>Static UI</h2>
+        </div>
+        <div class="row">
+            <div class="col-5 block">
+                <div v-if="currentDir">
+                    <div id="currentPath" @click="toParentNode()">
+                        <b> {{ currentDir.path }} </b>
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        <li v-for="(child, index) in currentDir.children" @click="toChildNode(child)" class="list-group-item">
+                            {{ child.name }}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-7 block">
+                <form>
+                    <select v-model="upload.type" title="Тип доступа" class="form-control mb-2">
+                        <option disabled>Тип доступа</option>
+                        <option value="public">public</option>
+                        <option value="protected">protected</option>
+                        <option value="private">private</option>
+                    </select>
+                    <input type="text" v-model="upload.path" placeholder="path" value="/" class="form-control mb-2">
+                    <input type="file" @change="prepareFile($event.target.files)" class="form-control mb-2">
+                    <input type="button" @click="sendFile()" value="Загрузить" class="form-control mb-2">
+                </form>
+                <div v-if="previewFile" style="margin-top: 1em; padding: 1em; border:1px solid; border-color:gray; border-radius: .2em;">
+                    <h3>Информация о файле:</h3>
+
+                    <p>Имя: {{ previewFile.name }}</p>
+                    <!--https://codepen.io/CSWApps/post/building-a-vue-js-bootstrap-radio-button-group-->
+                    <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                         <label class="btn btn-secondary active">
+                             <input type="radio" name="options" id="option1" autocomplete="off" checked> public
+                         </label>
+                         <label class="btn btn-secondary">
+                             <input type="radio" name="options" id="option2" autocomplete="off"> protected
+                         </label>
+                         <label class="btn btn-secondary">
+                             <input type="radio" name="options" id="option3" autocomplete="off"> private
+                         </label>
+                    </div>
+                    <!--v-bind:class="{ active: isActive }"-->
+
+                    <p>Время создания: {{ previewFile.timestamp | tsToUTC }}</p>
+                    <p>Размер: {{ previewFile.size | sizeForHumans }}</p>
+                    <a :href="previewFile.url" target="_blank">{{ previewFile.url }}</a>
+                    <div>
+                        <button @click="deleteFile()">Удалить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/build/js/app.js"></script>
+</body>
+</html>
