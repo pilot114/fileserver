@@ -11,6 +11,10 @@
         "symfony/framework-bundle": "^4.0",
         "symfony/lts": "^4@dev",
         "symfony/maker-bundle": "^1.3",
+<<<<<<< HEAD
+=======
+        "symfony/polyfill-php71": "^1.7",
+>>>>>>> 3b29fbe9c07a0fa7350f8325a49ddbe6f503b562
         "symfony/validator": "^4.0",
         "symfony/webpack-encore-pack": "^1.0",
         "symfony/yaml": "^4.0"

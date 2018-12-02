@@ -7,7 +7,11 @@ Vue.config.devtools = true;
 // пока хардкод
 let user = {
     name: 'portal',
+<<<<<<< HEAD
     token: '94a08da1fecbb6e8b46990538c7b50b2',
+=======
+    token: '94a08da1fecbb6e8b46990538c7b50b2'
+>>>>>>> 3b29fbe9c07a0fa7350f8325a49ddbe6f503b562
 };
 
 let api = {

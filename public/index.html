@@ -24,7 +24,10 @@
                 </div>
             </div>
             <div class="col-7 block">
+<<<<<<< HEAD
                 <h3>Загрузить файл:</h3>
+=======
+>>>>>>> 3b29fbe9c07a0fa7350f8325a49ddbe6f503b562
                 <form>
                     <select v-model="upload.type" title="Тип доступа" class="form-control mb-2">
                         <option disabled>Тип доступа</option>
@@ -36,6 +39,7 @@
                     <input type="file" @change="prepareFile($event.target.files)" class="form-control mb-2">
                     <input type="button" @click="sendFile()" value="Загрузить" class="form-control mb-2">
                 </form>
+<<<<<<< HEAD
 
                 <div v-if="previewFile" style="margin-top: 1em; padding: 1em; border:1px solid; border-color:gray; border-radius: .2em;">
                     <h3>Информация о файле:</h3>
@@ -53,6 +57,23 @@
                         <label class="btn btn-secondary">
                             <input type="radio" name="options" id="option3" autocomplete="off"> private
                         </label>
+=======
+                <div v-if="previewFile" style="margin-top: 1em; padding: 1em; border:1px solid; border-color:gray; border-radius: .2em;">
+                    <h3>Информация о файле:</h3>
+
+                    <p>Имя: {{ previewFile.name }}</p>
+                    <!--https://codepen.io/CSWApps/post/building-a-vue-js-bootstrap-radio-button-group-->
+                    <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                         <label class="btn btn-secondary active">
+                             <input type="radio" name="options" id="option1" autocomplete="off" checked> public
+                         </label>
+                         <label class="btn btn-secondary">
+                             <input type="radio" name="options" id="option2" autocomplete="off"> protected
+                         </label>
+                         <label class="btn btn-secondary">
+                             <input type="radio" name="options" id="option3" autocomplete="off"> private
+                         </label>
+>>>>>>> 3b29fbe9c07a0fa7350f8325a49ddbe6f503b562
                     </div>
                     <!--v-bind:class="{ active: isActive }"-->
 
